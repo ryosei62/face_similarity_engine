@@ -37,6 +37,7 @@ def main():
     LATENT_DIM = 64
     EPOCHS = 3
     BATCH_SIZE = 128  # fitメソッドのバッチサイズ
+    USE_TRIPLET_LOSS = True  # Triplet Lossを使用するかどうか
 
     os.makedirs("grahu", exist_ok=True)
     os.makedirs("selection", exist_ok=True)
@@ -92,10 +93,6 @@ def main():
     # こちらはシャッフルして、同様に繰り返す
     vae_dataset = vae_dataset.shuffle(len(all_images)).repeat().batch(BATCH_SIZE)
 
-    # 3. 2つのデータセットを結合
-    # これで、学習の各ステップで (triplet_batch, vae_batch) の両方がモデルに渡される
-    combined_dataset = tf.data.Dataset.zip((triplet_dataset, vae_dataset))
-
     # 1エポックあたりのステップ数を計算
     steps_per_epoch = len(all_images) // BATCH_SIZE
 
@@ -104,7 +101,7 @@ def main():
     start_time = time.time()
 
     vae.fit(
-        combined_dataset,
+        vae_dataset,
         epochs=EPOCHS,
         steps_per_epoch=steps_per_epoch,  # 1エポックあたりのステップ数を指定
         callbacks=[loss_history_callback],
