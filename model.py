@@ -124,11 +124,14 @@ class VAE(keras.Model):
         super().__init__(**kwargs)
         self.encoder = encoder
         self.decoder = decoder
+        self.triplet_margin = triplet_margin
+        self.triplet_loss_weight = triplet_loss_weight
         self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
         self.reconstruction_loss_tracker = keras.metrics.Mean(
             name="reconstruction_loss"
         )
         self.kl_loss_tracker = keras.metrics.Mean(name="kl_loss")
+        self.triplet_loss_tracker = keras.metrics.Mean(name="triplet_loss")
 
     @property
     def metrics(self):
@@ -140,7 +143,8 @@ class VAE(keras.Model):
         ]
 
     def train_step(self, data):
-        vae_batch = data
+        triplet_batch, vae_batch = data
+        (anchor, positive, negative) = triplet_batch
 
         with tf.GradientTape() as tape:
             # --- 1. VAE損失 (all_imagesからのバッチで計算) ---
@@ -163,9 +167,19 @@ class VAE(keras.Model):
                 )
             )
 
+            z_mean_a, _, _ = self.encoder(anchor)
+            z_mean_p, _, _ = self.encoder(positive)
+            z_mean_n, _, _ = self.encoder(negative)
+
+            dist_ap = ops.sum(ops.square(z_mean_a - z_mean_p), axis=1)
+            dist_an = ops.sum(ops.square(z_mean_a - z_mean_n), axis=1)
+
+            triplet_loss = ops.mean(
+                ops.maximum(dist_ap - dist_an + self.triplet_margin, 0.0)
+            )
             # --- 3. 合計損失 ---
             total_loss = (
-                reconstruction_loss + kl_loss
+                reconstruction_loss + kl_loss + self.triplet_loss_weight * triplet_loss
             )
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -177,4 +191,5 @@ class VAE(keras.Model):
             "loss": self.total_loss_tracker.result(),
             "reconstruction_loss": self.reconstruction_loss_tracker.result(),
             "kl_loss": self.kl_loss_tracker.result(),
+            "triplet_loss": self.triplet_loss_tracker.result(),
         }

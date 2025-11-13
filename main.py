@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
+
 # 作成したモジュールをインポート
 from dataset import prepare_dataset
 from model import build_encoder, build_decoder, VAE
@@ -93,6 +94,7 @@ def main():
     # こちらはシャッフルして、同様に繰り返す
     vae_dataset = vae_dataset.shuffle(len(all_images)).repeat().batch(BATCH_SIZE)
 
+    combined_dataset = tf.data.Dataset.zip((triplet_dataset, vae_dataset))
     # 1エポックあたりのステップ数を計算
     steps_per_epoch = len(all_images) // BATCH_SIZE
 
@@ -101,7 +103,7 @@ def main():
     start_time = time.time()
 
     vae.fit(
-        vae_dataset,
+        combined_dataset,
         epochs=EPOCHS,
         steps_per_epoch=steps_per_epoch,  # 1エポックあたりのステップ数を指定
         callbacks=[loss_history_callback],
@@ -128,7 +130,7 @@ def main():
     )"""
 
     # --- 画像グリッドを生成して中身を確認する ---
-    #save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
+    save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
 
     # 学習済みモデル(vae)と全画像(all_images)、
     # そして今定義した評価セット(evaluation_sets)を使って評価を実行
