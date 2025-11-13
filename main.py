@@ -4,7 +4,6 @@ import time
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import ops
 
 # 作成したモジュールをインポート
 from dataset import prepare_dataset
@@ -23,6 +22,7 @@ from search import (
 )
 from evaluation import run_evaluation
 from evaluation_data import EVALUATION_SETS
+from triplet_data import MANUAL_TRIPLETS 
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cdist
 
@@ -71,56 +71,12 @@ def main():
     all_images = np.concatenate([train_images, test_images], axis=0)
     loss_history_callback = LossHistoryCallback()
 
-    manual_triplets = [
-        (330, 390, 438),
-        (390, 443, 2),
-        (11, 51, 4),
-        (5, 11, 6),
-        (597, 656, 613),
-        (165, 186, 148),
-        (138, 159, 139),
-        (82, 82, 80),
-        (81, 82, 42),
-        (60, 61, 65),
-        (158, 169, 194),
-        (239, 338, 334),
-        (139, 310, 276),
-        (263, 264, 221),
-        (260, 228, 200),
-        (386, 387, 367),
-        (351, 330, 352),
-        (396, 399, 355),
-        (394, 371, 358),
-        (497, 516, 150),
-        (503, 540, 500),
-        (630, 629, 609),
-        (663, 664, 643),
-        (662, 702, 704),
-        (703, 700, 660),
-        (649, 738, 717),
-        (779, 810, 790),
-        (893, 878, 849),
-        (864, 869, 845),
-        (875, 877, 873),
-        (594, 597, 595),
-        (579, 597, 598),
-        (530, 549, 547),
-        (655, 656, 657),
-        (830, 856, 855),
-        (650, 663, 662),
-        (524, 583, 584),
-        (508, 509, 510),
-        (164, 168, 167),
-        (10, 32, 16),
-        (369, 370, 371),
-        (629, 546, 626),
-        # ... さらに追加 ...
-    ]
-    print(f"{len(manual_triplets)}組のTripletを定義しました。")
+  
+    print(f"{len(MANUAL_TRIPLETS)}組のTripletを定義しました。")
     print(f"{len(EVALUATION_SETS)}件の評価クエリをインポートしました。")
 
     anchors, positives, negatives = create_arrays_from_indices(
-        all_images, manual_triplets
+        all_images, MANUAL_TRIPLETS
     )
 
     # 1. Triplet用データセットを作成
@@ -170,12 +126,12 @@ def main():
     )
 
     # 学習曲線の保存
-    plot_loss_curve(
+    """plot_loss_curve(
         history=loss_history_callback.history, save_path="grahu/64vae_loss_curve.png"
-    )
+    )"""
 
     # --- 画像グリッドを生成して中身を確認する ---
-    save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
+    #save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
 
     # 学習済みモデル(vae)と全画像(all_images)、
     # そして今定義した評価セット(evaluation_sets)を使って評価を実行
