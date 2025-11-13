@@ -9,6 +9,4 @@ EVALUATION_SETS = [
         "query_index": 481,
         "ground_truth_indices": [445, 499, 755],
     },
-    # ...
-    # ... (ここに残り98組を追加していく) ...
 ]
