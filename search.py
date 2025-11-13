@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from PIL import Image,ImageEnhance,ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter
 from sklearn.metrics.pairwise import cosine_similarity
 from utils import plot_similar_images
 from sklearn.metrics.pairwise import cosine_similarity
@@ -48,6 +48,7 @@ def find_top_k_similar(vae, image_database, k=9):
         save_path=f"similar_cosin_k{k}.png",
         k=k,
     )
+
 
 def compare_with_user_judgment(
     vae,

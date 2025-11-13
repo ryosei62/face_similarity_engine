@@ -21,6 +21,8 @@ from search import (
     find_top_k_similar,
     compare_with_user_judgment,
 )
+from evaluation import run_evaluation
+from evaluation_data import EVALUATION_SETS
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cdist
 
@@ -54,12 +56,12 @@ def main():
     )
     decoder = build_decoder(latent_dim=LATENT_DIM, output_channels=CHANNELS)
 
-    #エンコーダのサマリを表示
-    #print("Encoder Summary:")
-    #encoder.summary()
-    #デコーダのサマリを表示
-    #print("\nDecoder Summary:")
-    #decoder.summary()
+    # エンコーダのサマリを表示
+    # print("Encoder Summary:")
+    # encoder.summary()
+    # デコーダのサマリを表示
+    # print("\nDecoder Summary:")
+    # decoder.summary()
 
     vae = VAE(encoder, decoder)
     vae.compile(optimizer=keras.optimizers.Adam())
@@ -115,8 +117,8 @@ def main():
         # ... さらに追加 ...
     ]
     print(f"{len(manual_triplets)}組のTripletを定義しました。")
+    print(f"{len(EVALUATION_SETS)}件の評価クエリをインポートしました。")
 
-    
     anchors, positives, negatives = create_arrays_from_indices(
         all_images, manual_triplets
     )
@@ -145,7 +147,6 @@ def main():
     print("モデルの学習を開始します...")
     start_time = time.time()
 
-    # ▼▼▼ fitの呼び出し方を変更 ▼▼▼
     vae.fit(
         combined_dataset,
         epochs=EPOCHS,
@@ -173,17 +174,24 @@ def main():
         history=loss_history_callback.history, save_path="grahu/64vae_loss_curve.png"
     )
 
+    # --- 画像グリッドを生成して中身を確認する ---
+    save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
+
+    # 学習済みモデル(vae)と全画像(all_images)、
+    # そして今定義した評価セット(evaluation_sets)を使って評価を実行
+    run_evaluation(
+        model=vae,
+        all_images=all_images,
+        evaluation_sets=EVALUATION_SETS,
+        k_list=[5, 10, 20],  # P@5, P@10, P@20 を計算
+    )
+
     # top-kを表示する
     # find_top_k_similar(vae, all_images, k=9)
     # find_top_k_similar_euclidean(vae, all_images, k=9)
 
-    # 自分が選んだ画像が検索上位にでるか確かめる
-
-    # --- 【事前準備】画像グリッドを一度だけ生成して中身を確認する ---
-    save_image_grid(all_images, f"image_grid/selection{NUM_IMAGES}.png")
-
     # --- ユーザーの主観で精度を評価 ---
-    evaluation_sets = [
+    """evaluation_sets = [
         {
             "name": "TestSet1",  # ファイル名に使うための名前
             "query_index": 330,
@@ -202,14 +210,13 @@ def main():
         },
         {"name": "TestSet5_...", "query_index": 629, "ground_truth_indices": [630]},
         # ↑今後、新しいテストセットを追加したい場合は、ここに辞書を追加するだけです。
-    ]
+    ]"""
 
-    # --- ステップ2: forループを使って、各セットを順番に評価する ---
+    # --- topkの画像表示 ---
+    # 自分が選んだ画像が検索上位にでるか確かめる
     """
     print("\n--- ユーザー定義の複数セットで評価を開始します ---")
     for test_set in evaluation_sets:
-        print(f"\n▼▼▼ 評価セット '{test_set['name']}' を実行 ▼▼▼")
-
         # 評価セットごとにユニークなファイルパスを作成
         user_selection_path = f"selection/{test_set['name']}_user_selection.png"
         model_result_path = f"selection/{test_set['name']}_model_result.png"
@@ -226,6 +233,7 @@ def main():
 
     print("\n--- 全ての評価が完了しました ---")
     """
+
 
 if __name__ == "__main__":
     main()
