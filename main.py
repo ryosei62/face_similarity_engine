@@ -23,7 +23,7 @@ from search import (
 )
 from evaluation import run_evaluation
 from evaluation_data import EVALUATION_SETS
-from triplet_data import MANUAL_TRIPLETS 
+from triplet_data import MANUAL_TRIPLETS
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.spatial.distance import cdist
 
@@ -73,12 +73,11 @@ def main():
     all_images = np.concatenate([train_images, test_images], axis=0)
     loss_history_callback = LossHistoryCallback()
 
-  
     print(f"{len(MANUAL_TRIPLETS)}組のTripletを定義しました。")
     print(f"{len(EVALUATION_SETS)}件の評価クエリをインポートしました。")
 
     anchors, positives, negatives = create_arrays_from_indices(
-        all_images, MANUAL_TRIPLETS
+        train_images, MANUAL_TRIPLETS
     )
 
     # 1. Triplet用データセットを作成
@@ -90,13 +89,13 @@ def main():
     triplet_dataset = triplet_dataset.batch(BATCH_SIZE)
 
     # 2. VAE（再構成）用データセットを作成
-    vae_dataset = tf.data.Dataset.from_tensor_slices(all_images)
+    vae_dataset = tf.data.Dataset.from_tensor_slices(train_images)
     # こちらはシャッフルして、同様に繰り返す
-    vae_dataset = vae_dataset.shuffle(len(all_images)).repeat().batch(BATCH_SIZE)
+    vae_dataset = vae_dataset.shuffle(len(train_images)).repeat().batch(BATCH_SIZE)
 
     combined_dataset = tf.data.Dataset.zip((triplet_dataset, vae_dataset))
     # 1エポックあたりのステップ数を計算
-    steps_per_epoch = len(all_images) // BATCH_SIZE
+    steps_per_epoch = len(train_images) // BATCH_SIZE
 
     # 4. モデルの学習を開始
     print("モデルの学習を開始します...")
